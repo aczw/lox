@@ -3,3 +3,11 @@ BasedOnStyle: Chromium
 ColumnLimit: 100
 InsertNewlineAtEOF: true
 SeparateDefinitionBlocks: Always
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*"'
+    Priority: 1
+  - Regex: '^<.*>'
+    Priority: 2
+    
