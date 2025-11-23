@@ -1,6 +1,8 @@
 #include "lox.hpp"
 
 #include "context.hpp"
+#include "scanner.hpp"
+#include "token.hpp"
 
 #include <filesystem>
 #include <format>
@@ -9,13 +11,18 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace lox {
 
 namespace {
 
-void run([[maybe_unused]] Context& ctx, std::string code) {
-  std::println("received code: {}", code);
+void run(Context& ctx, std::string code) {
+  std::vector<Token> tokens = scanner::scan_tokens(ctx, code);
+  std::println("Received tokens:");
+  for (const Token& token : tokens) {
+    std::println("- {}", token.lexeme);
+  }
 }
 
 }  // namespace

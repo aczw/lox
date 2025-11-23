@@ -8,6 +8,10 @@ add_executable(lox
   src/main.cpp
   src/lox.cpp
   src/log.cpp
+  src/scanner.cpp
+
+  src/context.hpp
+  src/token.hpp
 )
 
 target_compile_features(lox PRIVATE cxx_std_23)
