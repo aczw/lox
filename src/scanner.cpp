@@ -18,10 +18,10 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
 
   std::vector<Token> tokens;
 
-  const auto is_at_end = [&]() -> bool { return current >= source.length(); };
+  static const auto is_at_end = [&]() -> bool { return current >= source.length(); };
 
   // Conditionally advances the current position if the current character matches what we expect
-  const auto match = [&](char expected) -> bool {
+  static const auto match = [&](char expected) -> bool {
     if (is_at_end() || source[current] != expected) {
       return false;
     }
@@ -31,7 +31,7 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
   };
 
   // Performs one character of lookahead without any advancing
-  const auto peek = [&]() -> char {
+  static const auto peek = [&]() -> char {
     if (is_at_end()) {
       return '\0';
     }
@@ -40,7 +40,7 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
   };
 
   // Performs two characters of lookahead without any advancing
-  const auto peek_next = [&]() -> char {
+  static const auto peek_next = [&]() -> char {
     if (current + 1 >= source.length()) {
       return '\0';
     }
@@ -48,7 +48,8 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
     return source[current + 1];
   };
 
-  const auto add_token = [&](Token::Type type, std::optional<Token::Literal> literal = {}) -> void {
+  static const auto add_token = [&](Token::Type type,
+                                    std::optional<Token::Literal> literal = {}) -> void {
     tokens.push_back({
         .type = type,
         .lexeme = source.substr(start, current - start),
@@ -57,7 +58,7 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
     });
   };
 
-  const auto is_digit = [](char c) -> bool { return c >= '0' && c <= '9'; };
+  static const auto is_digit = [](char c) -> bool { return c >= '0' && c <= '9'; };
 
   while (!is_at_end()) {
     // We're at the beginning of the next lexeme
