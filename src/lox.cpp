@@ -11,6 +11,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace lox {
@@ -21,7 +22,17 @@ void run(Context& ctx, std::string code) {
   std::vector<Token> tokens = scanner::scan_tokens(ctx, code);
   std::println("Received tokens:");
   for (const Token& token : tokens) {
-    std::println("- {}", token.lexeme);
+    std::string literal = [&]() -> std::string {
+      if (std::holds_alternative<std::string>(token.literal)) {
+        return std::format(", literal: {}", std::get<std::string>(token.literal));
+      } else if (std::holds_alternative<double>(token.literal)) {
+        return std::format(", literal: {}", std::get<double>(token.literal));
+      } else {
+        return "";
+      }
+    }();
+
+    std::println("- {}{}", token.lexeme, literal);
   }
 }
 

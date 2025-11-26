@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include "token.hpp"
 
+#include <charconv>
 #include <format>
 #include <optional>
 #include <variant>
@@ -38,6 +39,15 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
     return source[current];
   };
 
+  // Performs two characters of lookahead without any advancing
+  const auto peek_next = [&]() -> char {
+    if (current + 1 >= source.length()) {
+      return '\0';
+    }
+
+    return source[current + 1];
+  };
+
   const auto add_token = [&](Token::Type type, std::optional<Token::Literal> literal = {}) -> void {
     tokens.push_back({
         .type = type,
@@ -47,12 +57,16 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
     });
   };
 
+  const auto is_digit = [](char c) -> bool { return c >= '0' && c <= '9'; };
+
   while (!is_at_end()) {
     // We're at the beginning of the next lexeme
     start = current;
 
     // Get the current character and then increment the position
-    switch (source[current++]) {
+    char c = source[current++];
+
+    switch (c) {
       using enum Token::Type;
 
         // clang-format off
@@ -94,11 +108,60 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
         line++;
         break;
 
-      default:
-        // Note that we don't stop on an error, we keep scanning
-        log::error(ctx, static_cast<int>(line),
-                   std::format("unexpected character \"{}\".", source[current]));
+      case '"': {
+        // String literals
+        while (peek() != '"' && !is_at_end()) {
+          if (peek() == '\n') {
+            line++;
+          }
+
+          current++;
+        }
+
+        if (is_at_end()) {
+          log::error(ctx, static_cast<int>(line), "unterminated string.");
+          break;
+        }
+
+        // Advance one more time to process the closing '"'
+        current++;
+
+        // For the value itself, we trim away the surrounding quotes
+        add_token(Token::Type::STRING, source.substr(start + 1, current - start - 2));
+
         break;
+      }
+
+      default: {
+        if (is_digit(c)) {
+          // Process number literal
+          while (is_digit(peek())) {
+            current++;
+          }
+
+          // Look for a fractional part
+          if (peek() == '.' && is_digit(peek_next())) {
+            // Consume the '.'
+            current++;
+
+            while (is_digit(peek())) {
+              current++;
+            }
+          }
+
+          std::string number_substr = source.substr(start, current - start + 1);
+          double value = 0.0;
+          std::from_chars(number_substr.data(), number_substr.data() + number_substr.size(), value);
+
+          add_token(Token::Type::NUMBER, value);
+        } else {
+          // Note that we don't stop on an error, we keep scanning
+          log::error(ctx, static_cast<int>(line),
+                     std::format("unexpected character \"{}\".", source[current]));
+        }
+
+        break;
+      }
     }
   }
 
