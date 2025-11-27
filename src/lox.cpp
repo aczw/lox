@@ -32,9 +32,9 @@ void run(Context& ctx, std::string code) {
   for (const Token& token : tokens) {
     std::string literal = std::invoke([&]() -> std::string {
       if (std::holds_alternative<std::string>(token.literal)) {
-        return std::format(", literal: {}", std::get<std::string>(token.literal));
+        return std::format(" (str literal: {})", std::get<std::string>(token.literal));
       } else if (std::holds_alternative<double>(token.literal)) {
-        return std::format(", literal: {}", std::get<double>(token.literal));
+        return std::format(" (num literal: {})", std::get<double>(token.literal));
       } else {
         return "";
       }
