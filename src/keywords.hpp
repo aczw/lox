@@ -30,8 +30,8 @@ constexpr std::array KEYWORDS = std::to_array<KeywordEntry>({
     {"while", Token::Type::WHILE},
 });
 
-/// Checks if a string is a valid reserved keyword via binary search, and returns the corresponding
-/// enum value if so.
+/// Checks if a string is a valid reserved keyword via binary search, and returns
+/// the corresponding enum value if so.
 std::optional<Token::Type> is_keyword(std::string_view text);
 
 /// Checks if a token enum is for a reserved keyword.

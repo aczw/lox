@@ -97,16 +97,51 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
       case '>': add_token(match('=') ? GREATER_EQUAL : GREATER); break;
         // clang-format on
 
-      case '/':
+      case '/': {
         if (match('/')) {
-          // Skips comments. Comments go until the end of the line
+          // Skip single-line comment. Comments go until the end of the line
           while (peek() != '\n' && !is_at_end()) {
+            current++;
+          }
+        } else if (match('*')) {
+          // Skip block comments, and support nested ones by keeping track of
+          // which layer we're currently on. The initial block comment starts at layer 1
+          int layer_count = 1;
+
+          while (!is_at_end()) {
+            char next = peek();
+            char next_next = peek_next();
+
+            if (next == '\n') {
+              line++;
+            } else if (next == '/' && next_next == '*') {
+              // If we encounter another block comment start, increment the nest layer we're on
+              layer_count++;
+              current++;
+            } else if (next == '*' && next_next == '/') {
+              // If we encounter a block comment end, decrease the layer we're on
+              layer_count--;
+
+              // We've only finished parsing the initial block comment if we're currently not
+              // within another nested block comment
+              if (layer_count == 0) {
+                current += 2;
+                break;
+              } else {
+                // Otherwise, continue the while loop. Increment `current` once here and let the
+                // other increment below take care of the second
+                current++;
+              }
+            }
+
             current++;
           }
         } else {
           add_token(SLASH);
         }
+
         break;
+      }
 
       case ' ':
       case '\r':

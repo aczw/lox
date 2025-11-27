@@ -21,6 +21,12 @@ namespace {
 
 void run(Context& ctx, std::string code) {
   std::vector<Token> tokens = scanner::scan_tokens(ctx, code);
+
+  if (ctx.had_error) {
+    std::println("lox: encountered error while scanning");
+    return;
+  }
+
   std::println("Received tokens:");
 
   for (const Token& token : tokens) {
