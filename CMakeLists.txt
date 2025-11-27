@@ -9,6 +9,7 @@ add_executable(lox
   src/lox.cpp
   src/log.cpp
   src/scanner.cpp
+  src/keywords.cpp
 
   src/context.hpp
   src/token.hpp

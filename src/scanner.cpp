@@ -1,11 +1,14 @@
 #include "scanner.hpp"
 
+#include "keywords.hpp"
 #include "log.hpp"
 #include "token.hpp"
 
 #include <charconv>
 #include <format>
+#include <functional>
 #include <optional>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -59,6 +62,12 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
   };
 
   static const auto is_digit = [](char c) -> bool { return c >= '0' && c <= '9'; };
+
+  static const auto is_alpha = [](char c) -> bool {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+  };
+
+  static const auto is_alpha_numeric = [](char c) -> bool { return is_alpha(c) || is_digit(c); };
 
   while (!is_at_end()) {
     // We're at the beginning of the next lexeme
@@ -155,6 +164,25 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
           std::from_chars(number_substr.data(), number_substr.data() + number_substr.size(), value);
 
           add_token(Token::Type::NUMBER, value);
+        } else if (is_alpha(c)) {
+          // Begin by assuming any lexeme starting with a letter or underscore is an identifier...
+          while (is_alpha_numeric(peek())) {
+            current++;
+          }
+
+          // ...then check if the lexeme matches one of the reserved words. If so, update the token
+          // type to be that of the specific reserved word instead.
+          Token::Type type = std::invoke([&]() -> Token::Type {
+            std::string lexeme = source.substr(start, current - start);
+
+            if (auto type_opt = is_keyword(lexeme); type_opt) {
+              return type_opt.value();
+            }
+
+            return Token::Type::IDENTIFIER;
+          });
+
+          add_token(type);
         } else {
           // Note that we don't stop on an error, we keep scanning
           log::error(ctx, static_cast<int>(line),

@@ -1,6 +1,7 @@
 #include "lox.hpp"
 
 #include "context.hpp"
+#include "keywords.hpp"
 #include "scanner.hpp"
 #include "token.hpp"
 
@@ -21,8 +22,9 @@ namespace {
 void run(Context& ctx, std::string code) {
   std::vector<Token> tokens = scanner::scan_tokens(ctx, code);
   std::println("Received tokens:");
+
   for (const Token& token : tokens) {
-    std::string literal = [&]() -> std::string {
+    std::string literal = std::invoke([&]() -> std::string {
       if (std::holds_alternative<std::string>(token.literal)) {
         return std::format(", literal: {}", std::get<std::string>(token.literal));
       } else if (std::holds_alternative<double>(token.literal)) {
@@ -30,9 +32,17 @@ void run(Context& ctx, std::string code) {
       } else {
         return "";
       }
-    }();
+    });
 
-    std::println("- {}{}", token.lexeme, literal);
+    std::print("- {}{}", token.lexeme, literal);
+
+    if (token.type == Token::Type::IDENTIFIER) {
+      std::println(" (identifier)");
+    } else if (is_keyword_enum(token.type)) {
+      std::println(" (keyword)");
+    } else {
+      std::println();
+    }
   }
 }
 
