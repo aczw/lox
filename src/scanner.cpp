@@ -6,7 +6,6 @@
 
 #include <charconv>
 #include <format>
-#include <functional>
 #include <optional>
 #include <string_view>
 #include <variant>
@@ -52,11 +51,11 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
   };
 
   static const auto add_token = [&](Token::Type type,
-                                    std::optional<Token::Literal> literal = {}) -> void {
+                                    std::optional<Token::Literal> literal = std::nullopt) -> void {
     tokens.push_back({
         .type = type,
         .lexeme = source.substr(start, current - start),
-        .literal = literal.value_or<Token::Literal>({}),
+        .literal = literal.value_or(std::monostate()),
         .line = static_cast<int>(line),
     });
   };
@@ -207,15 +206,8 @@ std::vector<Token> scan_tokens(Context& ctx, const std::string& source) {
 
           // ...then check if the lexeme matches one of the reserved words. If so, update the token
           // type to be that of the specific reserved word instead.
-          Token::Type type = std::invoke([&]() -> Token::Type {
-            std::string lexeme = source.substr(start, current - start);
-
-            if (auto type_opt = is_keyword(lexeme); type_opt) {
-              return type_opt.value();
-            }
-
-            return Token::Type::IDENTIFIER;
-          });
+          std::string_view lexeme = std::string_view(source).substr(start, current - start);
+          Token::Type type = is_keyword(lexeme).value_or(Token::Type::IDENTIFIER);
 
           add_token(type);
         } else {
